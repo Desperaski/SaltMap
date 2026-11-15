@@ -47,10 +47,26 @@ namespace SaltMap
         static GamePadState lastPad;
         static bool reported;
 
+        static float opacity = 1.0f;
+        public static float CurrentOpacity => opacity;
+
+        public static void ChangeOpacity(float delta)
+        {
+            opacity = MathHelper.Clamp(opacity + delta, 0.1f, 1.0f);
+            Settings.Set("minimapOpacity", opacity.ToString("F1", CultureInfo.InvariantCulture));
+        }
+
         public static void Init()
         {
             zoom = Math.Max(0, Math.Min(Zooms.Length - 1, Settings.GetInt("minimapZoom", DefaultZoom)));
             visible = Settings.GetBool("minimap", true);
+
+            // Читаем прозрачность как строку и парсим во float
+            string opStr = Settings.Get("minimapOpacity", "1.0");
+            if (float.TryParse(opStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+            {
+                opacity = MathHelper.Clamp(parsed, 0.1f, 1.0f); // не даем сделать полностью невидимой
+            }
         }
 
         /// <summary>
@@ -74,17 +90,26 @@ namespace SaltMap
 
             bool menu = player.playerInv != null && player.playerInv.active;
             bool talking = player.dialog != null && player.dialog.active;
-            if (pad.Buttons.Back == ButtonState.Pressed && padBefore.Buttons.Back != ButtonState.Pressed && !talking)
-                MenuMap.RequestFromBackButton();
+
             if (menu || talking || MenuMap.IsOpen) return;
 
-            if (pad.DPad.Up == ButtonState.Pressed && padBefore.DPad.Up != ButtonState.Pressed) StepForPad();
+            // Читаем нажатия из нашего JSON
+            bool toggleMap = ModControls.IsKeyboardPressed("MinimapToggle", keys, before) ||
+                             ModControls.IsGamepadPressed("MinimapToggle", pad, padBefore);
 
-            if (Pressed(keys, before, Keys.M)) SetVisible(!visible);
+            bool zoomIn = ModControls.IsKeyboardPressed("MinimapZoomIn", keys, before) ||
+                          ModControls.IsGamepadPressed("MinimapZoomIn", pad, padBefore);
+
+            bool zoomOut = ModControls.IsKeyboardPressed("MinimapZoomOut", keys, before) ||
+                           ModControls.IsGamepadPressed("MinimapZoomOut", pad, padBefore);
+
+            if (toggleMap) SetVisible(!visible);
+
             int step = 0;
-            if (Pressed(keys, before, Keys.OemPlus) || Pressed(keys, before, Keys.Add)) step = 1;
-            if (Pressed(keys, before, Keys.OemMinus) || Pressed(keys, before, Keys.Subtract)) step = -1;
-            SetZoom(zoom + step);
+            if (zoomIn) step = 1;
+            if (zoomOut) step = -1;
+
+            if (step != 0) SetZoom(zoom + step);
         }
 
         static void StepForPad()
@@ -138,7 +163,7 @@ namespace SaltMap
             Rectangle edge = frame;
             edge.Inflate(Math.Max(1, (int)Math.Round(1.5f * s)), Math.Max(1, (int)Math.Round(1.5f * s)));
             batch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, null, DepthStencilState.None, RasterizerState.CullNone);
-            batch.Draw(pixel, edge, Edge);
+            batch.Draw(pixel, edge, Edge * opacity);
             batch.End();
 
             MapView.Draw(device, batch, pixel, frame, focus, scale, new ViewStyle
@@ -151,6 +176,7 @@ namespace SaltMap
                 Show = Show.All,
                 Guide = Guide.Enabled,
                 EdgePointer = true,     // the next objective, when it is off the minimap
+                Opacity = opacity,
             });
 
             // The game drew its corner trim under the map; draw the part over the map

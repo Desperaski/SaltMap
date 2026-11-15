@@ -1,0 +1,98 @@
+# SaltMap Localization - Russian
+MENU_MAP=Карта
+MENU_ALL=Все
+MENU_ITEMS=Предметы
+MENU_BOSSES=Боссы
+MENU_NPCS=НПС
+MENU_SANCTUARIES=Святилища
+MENU_ENEMIES=Враги
+MENU_MAP_ONLY=Только карта
+
+STAT_ITEMS=Предметы
+STAT_BOSSES=Боссы
+STAT_SANCTUARIES=Захвачено святилищ
+STAT_OPACITY=Прозрачность миникарты
+
+GUIDE_NEXT=Далее: 
+GUIDE_OPTIONAL=Опционально: 
+GUIDE_OFF=Подсказки выкл.
+GUIDE_DONE=Основной путь пройден
+GUIDE_DEFEAT=Победить
+
+HINT_KB1=Движение: стрелки/WASD/мышь | Зум: Q E/колесо | Фильтр: F
+HINT_KB2=Гид: G | Центр: Пробел | Назад: Esc
+HINT_PAD_A=В центр
+HINT_PAD_B=Назад
+HINT_PAD_BACK=Закрыть
+HINT_PAD_MOVE=Движение
+HINT_PAD_ZOOM=Зум
+HINT_PAD_SHOW=Фильтр
+HINT_PAD_GUIDE=Гид
+
+MAP_ENEMY=Враг
+MAP_ALERT=(тревога)
+PLACE_EMPTY=пустое святилище
+
+# --- Имена боссов ---
+BOSS_dread=Промокший Рыцарь
+BOSS_cutqueen=Королева Улыбок
+BOSS_alchemist=Безумный Алхимик
+BOSS_bull=Краеканский Циклоп
+BOSS_fauxjester=Фальшивый Шут
+BOSS_dragon=Краеканский Змий
+BOSS_torturetree=Древо из Людей
+BOSS_pirate=Выпотрошенная Оболочка
+BOSS_gasbag=Отвратительный Смрад
+BOSS_inquisitor=Нетронутый Инквизитор
+BOSS_griffin=Третий Агнец
+BOSS_mummy=Высушенный Король
+BOSS_murderfly=Мурдиэлла Мал
+BOSS_clay=Бескровный Принц
+BOSS_ruinaxe=Жаждущий
+BOSS_lakewitch=Ведьма Озера
+BOSS_monster=Архитектор и Бескожий
+BOSS_squiddragon=Краекан Дракон Скоурж
+BOSS_nameless=Безымянный Бог
+BOSS_broken=Ронин Крэн
+BOSS_cloak=Карсджо Свирепый
+BOSS_deadking=Забытый Король
+
+# --- Названия регионов (SSMap) ---
+REGION_Shivering Shore=Дрожащий берег
+REGION_The Festering Banquet=Гниющий банкет
+REGION_Bandit's Pass=Разбойничий проход
+REGION_Village of Smiles=Деревня улыбок
+REGION_The Watching Woods=Смотрящие леса
+REGION_Sunken Keep=Затонувшая крепость
+REGION_Castle of Storms=Замок бурь
+REGION_Mal's Floating Castle=Парящий замок Мол
+REGION_Red Hall of Cages=Красный зал клеток
+REGION_Cran's Pass=Проход Крана
+REGION_Hager's Cavern=Пещера Хагера
+REGION_Mire of Stench=Зловонное болото
+REGION_Fort-Beyond-The-Mire=Форт-за-болотом
+REGION_The Far Beach=Дальний пляж
+REGION_Dome of the Forgotten=Купол забытых
+REGION_Ziggurat of Dust=Зиккурат праха
+REGION_The Ruined Temple=Разрушенный храм
+REGION_Pitchwoods=Смоляные леса
+REGION_Siam Lake=Озеро Сиама
+REGION_The Blackest Vault=Чернейшее убежище
+REGION_Salt Alkymancery=Солевая Алкиматория
+REGION_Crypt of Dead Gods=Склеп мёртвых богов
+REGION_The Still Palace=Недвижимый дворец
+REGION_Unknown=Неизвестный регион
+
+# --- Тексты шагов гида ---
+STEP_Choose a creed with the old man=Выбрать кредо у старика
+STEP_Masterless Knight's story=История Бесхозного Рыцаря
+STEP_Pitchfork=Вилы
+STEP_Stone Sellsword=Каменный наемник
+STEP_Kureimoa=Куреимоа
+STEP_Haymaker=Сокрушитель
+STEP_Despondent Thief's story=История Отчаявшегося Вора
+STEP_Vile Vines Ring=Кольцо Мерзких Лоз
+STEP_Bag of Earth=Мешок Земли
+STEP_Black Sands Sorcerer's story=История Колдуна Черных Песков
+STEP_House of Splendor sanctuary=Святилище Дома Великолепия
+STEP_Order of the Betrayer sanctuary=Святилище Ордена Предателей

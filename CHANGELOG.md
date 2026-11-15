@@ -2,6 +2,29 @@
 
 Each release's section below is also its GitHub release notes.
 
+## 0.5.0 (Enhanced Fork)
+
+This version includes major additions and QoL improvements made by the fork maintainer.
+
+### New Features
+- Fog of War: Map starts hidden and is revealed as you explore. Features smooth gradient edges, large reveals on boss kills, and separate save data for each character slot (`fog_<slot>.dat`).
+- Full Localization: The mod's UI (filters, hints, guide) now auto-syncs with the game's language (ID 9 = Russian) via a Harmony hook. Includes translated boss names and region names.
+- JSON Hotkeys: All mod hotkeys are moved to `Mods/SaltMapControls.json`, supporting both keyboard and gamepad.
+- Minimap Opacity: Added `minimapOpacity` setting in `.ini`.
+- UDP Tracker: Restored the original UDP position tracker (for external map apps) and moved it to an opt-in setting (`udpTracker=off` by default).
+
+### UI Fixes & Improvements
+- Gamepad Icons: Fixed missing stick and D-pad icons in the map menu hints by splitting hints into two lines and using the native `replaceIcons = 2` render mode.
+- Menu Speedup: Removed the sluggish ~1 second input delay when opening menus (`MenuSpeedup.cs`).
+- Larger Map Area: Reduced UI padding to give the map more screen space.
+- Two-line Hints: Control hints are split into two lines to prevent text overflow in Russian.
+
+### Build & Installer
+- New Build Pipeline: `tasks.targets` and `SaltMap.csproj` rewritten for automatic copying, patching, and ZIP creation.
+- Build.cmd: Added a one-click build script for users without Visual Studio.
+- Installer Fixes: `install.ps1` now correctly copies the `lang` folder. `uninstall.ps1` safely removes only mod files while keeping user data (settings, map tiles, fog progress, translations).
+- Progress Bar: Fixed the map download progress bar to use native `Write-Progress` so it doesn't break when resizing the console window.
+
 ## 0.4.4
 
 Everything since 0.2.1 (0.3.0 and the 0.4.x steps were not released separately).

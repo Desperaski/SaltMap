@@ -64,6 +64,7 @@ namespace SaltMap
             finally
             {
                 TileCache.EndFrame();
+                FogOfWar.EndFrame();
             }
         }
 

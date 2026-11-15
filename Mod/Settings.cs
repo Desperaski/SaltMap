@@ -23,14 +23,26 @@ namespace SaltMap
         {
             baseDir = modDir;
             path = Path.Combine(modDir, "SaltMap.ini");
+
+            // Если файла нет — создаём его с полным набором дефолтов
             if (!File.Exists(path))
             {
                 values["ssmap"] = DefaultSsMap;
                 values["minimap"] = "on";
+                values["minimapOpacity"] = "1.0";
+                values["modLang"] = "";
+
+                values["fogOfWar"] = "on";
+                values["fogRadius"] = "800";
+                values["fogBossRadius"] = "3000";
+                values["udpTracker"] = "off";
+
                 Save();
                 Log.Info("settings: wrote defaults to " + path);
                 return;
             }
+
+            // Читаем существующий файл
             foreach (string raw in File.ReadAllLines(path))
             {
                 string line = raw.Trim();
@@ -39,6 +51,23 @@ namespace SaltMap
                 if (eq <= 0) continue;
                 values[line.Substring(0, eq).Trim()] = line.Substring(eq + 1).Trim();
             }
+
+            // Проверяем, не потерялись ли новые настройки (для тех, кто обновился со старой версии)
+            bool changed = false;
+            if (!values.ContainsKey("minimapOpacity")) { values["minimapOpacity"] = "1.0"; changed = true; }
+            if (!values.ContainsKey("modLang")) { values["modLang"] = ""; changed = true; }
+            if (!values.ContainsKey("fogOfWar")) { values["fogOfWar"] = "on"; changed = true; }
+            if (!values.ContainsKey("fogRadius")) { values["fogRadius"] = "800"; changed = true; }
+            if (!values.ContainsKey("fogBossRadius")) { values["fogBossRadius"] = "3000"; changed = true; }
+            if (!values.ContainsKey("udpTracker")) { values["udpTracker"] = "off"; changed = true; }
+
+            // Если добавили что-то новое — пересохраняем файл
+            if (changed)
+            {
+                Save();
+                Log.Info("settings: added missing defaults and saved");
+            }
+
             Log.Info("settings: read " + path);
         }
 
@@ -107,7 +136,20 @@ namespace SaltMap
             sb.AppendLine("# SaltMap settings. Lines are key=value; # starts a comment.");
             sb.AppendLine("# ssmap: folder of the SSMap web map (needs tiles\\, markers.js and images\\markerIcons\\);");
             sb.AppendLine("#        a relative path counts from this Mods folder.");
+            sb.AppendLine("# udpTracker: on or off. Sends player coords to localhost:47800 for external map trackers.");
             sb.AppendLine("# minimap: on or off. minimapZoom: 0 (far) to 7 (near).");
+            sb.AppendLine("# modLang: force language for the mod interface (en, ru, etc.). Leave empty to auto-detect from game.");
+            sb.AppendLine("# fogOfWar: on or off. Enables the map fog of war.");
+            sb.AppendLine("# fogRadius: how far the map is revealed around the player (in map pixels).");
+            sb.AppendLine("# fogBossRadius: how far the map is revealed when a boss is defeated.");
+
+            if (!values.ContainsKey("modLang")) values["modLang"] = "";
+            if (!values.ContainsKey("minimapOpacity")) values["minimapOpacity"] = "1.0";
+            if (!values.ContainsKey("fogOfWar")) values["fogOfWar"] = "on";
+            if (!values.ContainsKey("fogRadius")) values["fogRadius"] = "800";
+            if (!values.ContainsKey("fogBossRadius")) values["fogBossRadius"] = "3000";
+            if (!values.ContainsKey("udpTracker")) values["udpTracker"] = "off";
+
             foreach (KeyValuePair<string, string> kv in values)
                 sb.AppendLine(kv.Key + "=" + kv.Value);
             File.WriteAllText(path, sb.ToString());

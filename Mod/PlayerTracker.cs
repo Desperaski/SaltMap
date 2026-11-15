@@ -21,7 +21,8 @@ namespace SaltMap
     internal static class PlayerTracker
     {
         static readonly IPEndPoint MapServer = new IPEndPoint(IPAddress.Loopback, 47800);
-        static readonly UdpClient udp = new UdpClient();
+        static UdpClient udp;
+        static bool udpEnabled;
 
         static int lastState = int.MinValue;
         static int lastCharIdx = int.MinValue;
@@ -46,6 +47,17 @@ namespace SaltMap
 
         /// <summary>Seconds since the mod started, for animating icons.</summary>
         public static float Now { get { return (float)clock.Elapsed.TotalSeconds; } }
+
+        public static void Init(string modDir)
+        {
+            // Инициализация UDP, если включено в конфиге
+            udpEnabled = Settings.GetBool("udpTracker", false); // По умолчанию выключено
+            if (udpEnabled)
+            {
+                udp = new UdpClient();
+                Log.Info("UDP tracker enabled on port 47800");
+            }
+        }
 
         public static void Tick()
         {
@@ -85,11 +97,15 @@ namespace SaltMap
                 lastCharIdx = charIdx;
             }
 
-            byte[] msg = Encoding.ASCII.GetBytes(
-                loc.X.ToString("F1", CultureInfo.InvariantCulture) + "," +
-                loc.Y.ToString("F1", CultureInfo.InvariantCulture) + "," +
-                state.ToString(CultureInfo.InvariantCulture));
-            udp.Send(msg, msg.Length, MapServer);
+            // Отправляем данные, только если включено
+            if (udpEnabled && udp != null)
+            {
+                byte[] msg = Encoding.ASCII.GetBytes(
+                    loc.X.ToString("F1", CultureInfo.InvariantCulture) + "," +
+                    loc.Y.ToString("F1", CultureInfo.InvariantCulture) + "," +
+                    state.ToString(CultureInfo.InvariantCulture));
+                try { udp.Send(msg, msg.Length, MapServer); } catch { }
+            }
         }
 
         static Vector2? CharacterOf(Player[] players, Character[] characters, int idx)

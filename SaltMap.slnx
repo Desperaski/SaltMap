@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Mod/SaltMap.csproj" />
+  <Project Path="Patcher/SaltPatcher.csproj" />
+  <Project Path="Reference/salt/salt.csproj" />
+</Solution>

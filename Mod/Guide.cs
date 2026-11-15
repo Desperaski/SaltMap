@@ -43,9 +43,15 @@ namespace SaltMap
             public string Marker;        // SSMap marker name (items, sanctuaries)
             public string After;         // the main step that opens an optional one: its boss flag or NPC
             public Vector2? Target;      // world position, for fixed targets
+            public string LocalizedBossName;
         }
 
-        static Step Boss(string boss, string area, string flag) { return new Step { Kind = Kind.Boss, Text = "Defeat " + boss, Area = area, Key = flag }; }
+        // Меняем хардкод "Defeat ..." на просто имя босса
+        static Step Boss(string boss, string area, string flag)
+        {
+            return new Step { Kind = Kind.Boss, Text = boss, Area = area, Key = flag };
+        }
+
         static Step Brand(string what, string area, int rune, string npc) { return new Step { Kind = Kind.Brand, Text = what, Area = area, Rune = rune, Npc = npc }; }
 
         static readonly Step[] Main =
@@ -143,7 +149,16 @@ namespace SaltMap
                         Seg seg = segs[k];
                         if (seg == null) continue;
                         string script = seg.strFlag ?? "";
-                        if (s.Kind == Kind.Boss && HasLine(script, "boss", s.Key)) s.Target = seg.loc;
+
+                        if (s.Kind == Kind.Boss && HasLine(script, "boss", s.Key))
+                        {
+                            s.Target = seg.loc;
+
+                            // ДОБАВЛЯЕМ ПОИСК ПЕРЕВОДА:
+                            int idx = MonsterEdit.monsters.MonsterCatalog.GetIdxFromString(seg.texture);
+                            if (idx >= 0) s.LocalizedBossName = Enemies.NameOf(idx);
+                        }
+
                         else if (s.Kind == Kind.Brand && seg.texture == s.Npc && HasLine(script, "brandfire", null)) s.Target = seg.loc;
                         else if (s.Kind == Kind.Flag && seg.texture == s.Npc) s.Target = seg.loc;   // the NPC's first spot
                     }
@@ -220,7 +235,35 @@ namespace SaltMap
                 Vector2? at = Where(s);
                 area = at.HasValue ? Markers.RegionNear(at.Value) : null;
             }
-            return area == null ? s.Text : s.Text + " (" + area + ")";
+
+            // Переводим название зоны
+            if (!string.IsNullOrEmpty(area))
+            {
+                area = Loc.Get("REGION_" + area);
+            }
+
+            string text = s.Text;
+            if (s.Kind == Kind.Boss)
+            {
+                string translated = Loc.Get("BOSS_" + s.Key);
+                if (translated != "BOSS_" + s.Key) // Перевод найден в файле
+                {
+                    text = Loc.Get("GUIDE_DEFEAT") + " " + translated;
+                }
+                else if (!string.IsNullOrEmpty(s.LocalizedBossName)) // Берем из игры
+                {
+                    text = Loc.Get("GUIDE_DEFEAT") + " " + s.LocalizedBossName;
+                }
+            }
+            else
+            {
+                // Переводим текст шага (если есть ключ STEP_...)
+                string stepKey = "STEP_" + s.Text;
+                string translatedStep = Loc.Get(stepKey);
+                if (translatedStep != stepKey) text = translatedStep;
+            }
+
+            return area == null ? text : text + " (" + area + ")";
         }
 
         /// <summary>The main route's next objective, or false when it is done or the guide is off.</summary>

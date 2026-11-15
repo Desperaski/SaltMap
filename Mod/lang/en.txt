@@ -1,0 +1,84 @@
+# SaltMap Localization - English
+MENU_MAP=Map
+MENU_ALL=All
+MENU_ITEMS=Items
+MENU_BOSSES=Bosses
+MENU_NPCS=NPCs
+MENU_SANCTUARIES=Sanctuaries
+MENU_ENEMIES=Enemies
+MENU_MAP_ONLY=Map only
+
+STAT_ITEMS=Items
+STAT_BOSSES=Bosses
+STAT_SANCTUARIES=Sanctuaries claimed
+STAT_OPACITY=Mini-Opacity
+
+GUIDE_NEXT=Next: 
+GUIDE_OPTIONAL=Optional: 
+GUIDE_OFF=Guide off
+GUIDE_DONE=Main route done
+GUIDE_DEFEAT=Defeat 
+
+HINT_KB1=Move: arrows/WASD/drag | Zoom: Q E/wheel | Show: F
+HINT_KB2=Guide: G | Centre: Space | Back: Esc
+HINT_PAD_A=Centre
+HINT_PAD_B=Back
+HINT_PAD_BACK=Close
+HINT_PAD_MOVE=Move
+HINT_PAD_ZOOM=Zoom
+HINT_PAD_SHOW=Show
+HINT_PAD_GUIDE=Guide
+
+MAP_ENEMY=Enemy
+MAP_ALERT=(alert)
+PLACE_EMPTY=empty sanctuary
+
+# --- Boss Names ---
+BOSS_dread=The Sodden Knight
+BOSS_cutqueen=The Queen of Smiles
+BOSS_alchemist=The Mad Alchemist
+BOSS_bull=Kraekan Cyclops
+BOSS_fauxjester=The False Jester
+BOSS_dragon=Kraekan Wyrm
+BOSS_torturetree=The Tree of Men
+BOSS_pirate=The Disemboweled Husk
+BOSS_gasbag=That Stench Most Foul
+BOSS_inquisitor=The Untouched Inquisitor
+BOSS_griffin=The Third Lamb
+BOSS_mummy=The Dried King
+BOSS_murderfly=Murdiella Mal
+BOSS_clay=The Bloodless Prince
+BOSS_ruinaxe=The Coveted
+BOSS_lakewitch=The Witch of the Lake
+BOSS_monster=The Architect and The Unskinned
+BOSS_squiddragon=Kraekan Dragon Skourzh
+BOSS_nameless=The Nameless God
+BOSS_broken=Ronin Cran
+BOSS_cloak=Carsejaw the Cruel
+BOSS_deadking=The Forgotten King
+
+# --- SSMap Region Names ---
+REGION_Shivering Shore=Shivering Shore
+REGION_The Festering Banquet=The Festering Banquet
+REGION_Bandit's Pass=Bandit's Pass
+REGION_Village of Smiles=Village of Smiles
+REGION_The Watching Woods=The Watching Woods
+REGION_Sunken Keep=Sunken Keep
+REGION_Castle of Storms=Castle of Storms
+REGION_Red Hall of Cages=Red Hall of Cages
+REGION_Mal's Floating Castle=Mal's Floating Castle
+REGION_Cran's Pass=Cran's Pass
+REGION_Hager's Cavern=Hager's Cavern
+REGION_Mire of Stench=Mire of Stench
+REGION_Fort-Beyond-The-Mire=Fort-Beyond-The-Mire
+REGION_The Far Beach=The Far Beach
+REGION_Dome of the Forgotten=Dome of the Forgotten
+REGION_Ziggurat of Dust=Ziggurat of Dust
+REGION_The Ruined Temple=The Ruined Temple
+REGION_Pitchwoods=Pitchwoods
+REGION_Siam Lake=Siam Lake
+REGION_The Blackest Vault=The Blackest Vault
+REGION_Salt Alkymancery=Salt Alkymancery
+REGION_Crypt of Dead Gods=Crypt of Dead Gods
+REGION_The Still Palace=The Still Palace
+REGION_Unknown=Unknown Region

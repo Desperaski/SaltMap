@@ -1,10 +1,25 @@
 SaltMap - minimap and map page for Salt and Sanctuary (Windows, Steam)
 
+Installation Instructions
+=====================================
+
 Install
-  Close the game, then double-click Install.cmd. It finds the game through Steam,
-  patches salt.exe once (the original is kept as salt.exe.orig), installs the mod, and on
-  the first install downloads the map data (about 120 MB) from the SSMap project on GitHub
-  into the game's Mods\SSMap folder. Then start the game.
+  1. Make sure Salt and Sanctuary is CLOSED.
+  2. Double-click "install.cmd".
+  3. Wait for the installer to finish (it will download the map data, which takes a few minutes).
+  4. Launch the game.
+
+
+Uninstall
+  1. Make sure the game is CLOSED.
+  2. Double-click "uninstall.cmd".
+    This will restore the original salt.exe and remove the mod's core files.
+    Your settings (SaltMap.ini), map data (SSMap), and fog of war progress will be kept safely.
+
+Troubleshooting:
+----------------
+If the installer cannot find your game folder, open PowerShell in this folder and run:
+  powershell -ExecutionPolicy Bypass -File install.ps1 -GameDir "D:\Path\To\Salt and Sanctuary"
 
   Options (run from PowerShell, or add them after Install.cmd):
     install.ps1 -GameDir "D:\...\Salt and Sanctuary"   if the game is not found
@@ -13,9 +28,9 @@ Install
 
   The log is <game folder>\Mods\SaltMap.log.
 
-Remove
-  powershell -ExecutionPolicy Bypass -File uninstall.ps1
-  (or Steam's "Verify integrity of game files", then delete the Mods folder).
+If the map download fails, you can manually download the map 
+from https://github.com/Kaszub09/SSMap, extract it, and place the "tiles", "markers.js", 
+and "images" folders into: Mods\SSMap\
 
 After a game update, run Install.cmd again: it re-patches the new salt.exe.
 

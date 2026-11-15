@@ -16,6 +16,7 @@ namespace SaltMap
         public bool EdgePointer;    // and point at it from the edge when it is outside
         public bool OnlyRinged;     // zoomed far out: only the ringed objectives' icons, no enemies
         public float EnemyRange;    // world units around the player; 0 shows every enemy
+        public float Opacity;
     }
 
     /// <summary>
@@ -82,15 +83,17 @@ namespace SaltMap
             device.ScissorRectangle = rect;
             batch.Begin(SpriteSortMode.Deferred, BlendState.NonPremultiplied, SamplerState.LinearClamp,
                 DepthStencilState.None, Clipped);
-            batch.Draw(pixel, rect, Background);
+            batch.Draw(pixel, rect, Background * style.Opacity);
 
             // The tile zoom that is at least as sharp as the screen needs, a little leniently.
             int z = (int)Math.Ceiling(MapSpace.MaxZoom + Math.Log(scale, 2) - 0.3);
             z = Math.Max(0, Math.Min(MapSpace.MaxZoom, z));
             // A coarse layer first, so there is something to see while sharper tiles load.
             int coarse = Math.Max(0, z - 2);
-            if (coarse < z) DrawTiles(batch, rect, focus, scale, coarse, false);
-            DrawTiles(batch, rect, focus, scale, z, true);
+            if (coarse < z) DrawTiles(batch, rect, focus, scale, coarse, false, style.Opacity);
+            DrawTiles(batch, rect, focus, scale, z, true, style.Opacity);
+
+            FogOfWar.Draw(device, batch, rect, focus, scale);
 
             if (style.DotSize > 0 && (style.Show & Show.Enemies) != 0 && !style.OnlyRinged)
                 DrawEnemies(batch, disc, hoop, rect, focus, scale, style);
@@ -107,7 +110,7 @@ namespace SaltMap
                     Texture2D icon = Markers.Icon(device, Progress.IconOf(m));
                     if (icon == null) continue;
                     batch.Draw(icon, new Rectangle((int)Math.Round(at.X - half), (int)Math.Round(at.Y - half),
-                        (int)Math.Round(style.IconSize), (int)Math.Round(style.IconSize)), Color.White);
+                        (int)Math.Round(style.IconSize), (int)Math.Round(style.IconSize)), Color.White * style.Opacity);
                 }
             }
 
@@ -122,8 +125,8 @@ namespace SaltMap
                 {
                     Vector2 at = ToScreen(rect, focus, scale, o.Value);
                     if (!Near(rect, at, r)) continue;
-                    Blit(batch, hoop, at, r + 5f, Outline * 0.75f);
-                    Blit(batch, hoop, at, r, OptionalColor);
+                    Blit(batch, hoop, at, r + 5f, Outline * 0.75f * style.Opacity);
+                    Blit(batch, hoop, at, r, OptionalColor * style.Opacity);
                 }
                 if (Guide.Next(out nextText, out next))
                     DrawObjective(batch, pixel, hoop, rect, ToScreen(rect, focus, scale, next), style, t);
@@ -132,8 +135,8 @@ namespace SaltMap
             if (style.PlayerSize > 0 && PlayerTracker.HasPosition)
             {
                 if (PlayerTracker.CoopPosition.HasValue)
-                    DrawPlayer(batch, pixel, ToScreen(rect, focus, scale, MapSpace.FromWorld(PlayerTracker.CoopPosition.Value)), style.PlayerSize, CoopColor);
-                DrawPlayer(batch, pixel, ToScreen(rect, focus, scale, MapSpace.FromWorld(PlayerTracker.Position)), style.PlayerSize, PlayerColor);
+                    DrawPlayer(batch, pixel, ToScreen(rect, focus, scale, MapSpace.FromWorld(PlayerTracker.CoopPosition.Value)), style.PlayerSize, CoopColor * style.Opacity);
+                DrawPlayer(batch, pixel, ToScreen(rect, focus, scale, MapSpace.FromWorld(PlayerTracker.Position)), style.PlayerSize, PlayerColor * style.Opacity);
             }
             batch.End();
         }
@@ -147,12 +150,14 @@ namespace SaltMap
         static bool Shown(Marker m, ViewStyle style, HashSet<Marker> ringed)
         {
             if ((style.Show & m.Kind) == 0 || Progress.IsHidden(m)) return false;
+            if (!FogOfWar.IsVisited(m.Map)) return false;
             return ringed == null || ringed.Contains(m);
         }
 
         /// <summary>Whether an enemy is close enough to the player to show.</summary>
         static bool InRange(Enemies.Dot e, ViewStyle style)
         {
+            if (!FogOfWar.IsVisited(e.Map)) return false;
             if (style.EnemyRange <= 0f || !PlayerTracker.HasPosition) return true;
             float reach = style.EnemyRange * MapSpace.PixelsPerUnit;
             return Vector2.DistanceSquared(e.Map, MapSpace.FromWorld(PlayerTracker.Position)) <= reach * reach;
@@ -168,9 +173,9 @@ namespace SaltMap
                 Vector2 at = ToScreen(rect, focus, scale, e.Map);
                 if (!Near(rect, at, size * 1.5f)) continue;
                 at.Y -= size * 0.6f;                                     // from the feet up to the body
-                if (e.Boss) Blit(batch, hoop, at, size * 1.7f, BossRing * 0.85f);
-                Blit(batch, disc, at, size + 2f, Outline * 0.6f);
-                Blit(batch, disc, at, size, EnemyColor);
+                if (e.Boss) Blit(batch, hoop, at, size * 1.7f, BossRing * 0.85f * style.Opacity);
+                Blit(batch, disc, at, size + 2f, Outline * 0.6f * style.Opacity);
+                Blit(batch, disc, at, size, EnemyColor * style.Opacity);
             }
         }
 
@@ -189,8 +194,8 @@ namespace SaltMap
             float radius = Math.Max(style.IconSize, 12f) * 2.1f * pulse;
             if (Near(rect, at, -radius * 0.3f))
             {
-                Blit(batch, hoop, at, radius + 6f, Outline * 0.8f);
-                Blit(batch, hoop, at, radius, GuideColor);
+                Blit(batch, hoop, at, radius + 6f, Outline * 0.8f * style.Opacity);
+                Blit(batch, hoop, at, radius, GuideColor * style.Opacity);
                 return;
             }
             if (!style.EdgePointer) return;
@@ -204,8 +209,8 @@ namespace SaltMap
             Vector2 tip = centre + d * Math.Min(sx, sy);
             float angle = (float)Math.Atan2(d.Y, d.X);
             float thick = Math.Max(2.5f, size * 0.42f) * pulse;
-            DrawChevron(batch, pixel, tip, angle, size, thick + 3f, Outline);
-            DrawChevron(batch, pixel, tip, angle, size, thick, GuideColor);
+            DrawChevron(batch, pixel, tip, angle, size, thick + 3f, Outline * style.Opacity);
+            DrawChevron(batch, pixel, tip, angle, size, thick, GuideColor * style.Opacity);
         }
 
         static void Blit(SpriteBatch batch, Texture2D tex, Vector2 centre, float size, Color color)
@@ -221,7 +226,7 @@ namespace SaltMap
                 batch.Draw(pixel, tip, null, color, arm, new Vector2(0f, 0.5f), new Vector2(length, thick), SpriteEffects.None, 0f);
         }
 
-        static void DrawTiles(SpriteBatch batch, Rectangle rect, Vector2 focus, float scale, int z, bool request)
+        static void DrawTiles(SpriteBatch batch, Rectangle rect, Vector2 focus, float scale, int z, bool request, float opacity)
         {
             // Map pixels covered by one tile at this zoom.
             float span = MapSpace.TileSize * (float)Math.Pow(2, MapSpace.MaxZoom - z);
@@ -244,7 +249,9 @@ namespace SaltMap
                     Vector2 a = ToScreen(rect, focus, scale, new Vector2(tx * span, ty * span));
                     Vector2 b = ToScreen(rect, focus, scale, new Vector2((tx + 1) * span, (ty + 1) * span));
                     int left = (int)Math.Round(a.X), top = (int)Math.Round(a.Y);
-                    batch.Draw(tex, new Rectangle(left, top, (int)Math.Round(b.X) - left, (int)Math.Round(b.Y) - top), Color.White);
+
+                    // ВОТ ЗДЕСЬ ИСПОЛЬЗУЕМ ПАРАМЕТР opacity, А НЕ style.Opacity!
+                    batch.Draw(tex, new Rectangle(left, top, (int)Math.Round(b.X) - left, (int)Math.Round(b.Y) - top), Color.White * opacity);
                 }
             }
         }
@@ -281,12 +288,12 @@ namespace SaltMap
             if (Guide.Next(out text, out at))
             {
                 float d = Vector2.DistanceSquared(ToScreen(rect, focus, scale, at), screen);
-                if (d < bestDist) { bestDist = d; best = "Next: " + text; }
+                if (d < bestDist) { bestDist = d; best = Loc.Get("GUIDE_NEXT") + text; }
             }
             foreach (KeyValuePair<string, Vector2> o in Guide.OptionalOpen())
             {
                 float d = Vector2.DistanceSquared(ToScreen(rect, focus, scale, o.Value), screen);
-                if (d < bestDist) { bestDist = d; best = "Optional: " + o.Key; }
+                if (d < bestDist) { bestDist = d; best = Loc.Get("GUIDE_OPTIONAL") + o.Key; }
             }
             return best;
         }

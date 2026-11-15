@@ -33,6 +33,15 @@ namespace SaltMap
                 // stopping the rest of the mod; each says so in the log.
                 try { Settings.Load(ModDir); }
                 catch (Exception e) { Log.Info("settings: failed to read, using defaults: " + e.Message); }
+
+                PlayerTracker.Init(ModDir);
+
+                ModControls.Load(ModDir);
+
+                Loc.Init(ModDir);
+
+                FogOfWar.Init(ModDir);
+
                 Minimap.Init();
                 try { Markers.Load(Settings.SsMapFolder); }
                 catch (Exception e) { Log.Info("markers: failed to load: " + e); }

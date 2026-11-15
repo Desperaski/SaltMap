@@ -26,6 +26,9 @@ namespace SaltMap
             try { Enemies.Update(); }
             catch (Exception e) { Log.ErrorOnce("Enemies", e); }
 
+            try { FogOfWar.Update(); }
+            catch (Exception e) { Log.ErrorOnce("FogOfWar", e); }
+
             try { Minimap.HandleInput(); }
             catch (Exception e) { Log.ErrorOnce("Minimap input", e); }
         }
@@ -143,6 +146,16 @@ namespace SaltMap
         {
             try { MenuMap.AfterFindNearest(p, pSelItem, ref __result); }
             catch (Exception e) { Log.ErrorOnce("MenuMap nearest", e); }
+        }
+    }
+
+    [HarmonyPatch(typeof(ProjectTower.config.ConfigMgr), "Read")]
+    internal static class ConfigReadHook
+    {
+        static void Postfix()
+        {
+            try { Loc.Reload(); }
+            catch (Exception e) { Log.ErrorOnce("Loc reload", e); }
         }
     }
 }

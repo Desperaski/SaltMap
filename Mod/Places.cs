@@ -250,7 +250,7 @@ namespace SaltMap
             StringBuilder[] strs = PlayerStats.strs;
             if (creed > 0 && strs != null && CreedNameBase + creed < strs.Length && strs[CreedNameBase + creed] != null)
                 owner = strs[CreedNameBase + creed].ToString().Trim();
-            return (string.IsNullOrEmpty(area) ? "Sanctuary" : area) + ": " + (owner ?? "empty sanctuary");
+            return (string.IsNullOrEmpty(area) ? Loc.Get("MENU_SANCTUARIES") : area) + ": " + (owner ?? Loc.Get("PLACE_EMPTY"));
         }
 
         /// <summary>"Mad Jester - #1" -> "Mad Jester": only the NPC's current spot is shown.</summary>

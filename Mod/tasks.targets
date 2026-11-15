@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- ======================================================================= -->
+  <!-- ЦЕЛИ СБОРКИ (ПАЙПЛАЙН)                                                  -->
+  <!-- ======================================================================= -->
+
+  <!-- Каждая сборка с игрой устанавливает мод. Сначала закройте игру: она блокирует DLL. -->
+  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(UseGame)' == 'true' and '$(SkipDeploy)' != 'true'">
+    <ItemGroup>
+      <!-- Собираем файлы мода -->
+      <ModFiles Include="$(TargetDir)$(AssemblyName).dll" />
+      <ModFiles Include="$(TargetDir)0Harmony.dll" />
+      <!-- Собираем файлы локализации в отдельный список -->
+      <LangFiles Include="$(TargetDir)lang\*.*" />
+    </ItemGroup>
+    
+    <!-- Создаем папки -->
+    <MakeDir Directories="$(GameDir)\Mods" />
+    <MakeDir Directories="$(GameDir)\Mods\lang" />
+    
+    <!-- Копируем мод -->
+    <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(GameDir)\Mods" SkipUnchangedFiles="true" />
+    
+    <!-- Копируем локализацию -->
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(GameDir)\Mods\lang" SkipUnchangedFiles="true" />
+    
+    <Message Importance="high" Text="[SaltMap] Мод и локализация успешно скопированы в $(GameDir)\Mods" />
+  </Target>
+
+  <!-- Автоматический запуск патчера после копирования мода -->
+  <Target Name="RunPatcher" AfterTargets="DeployMod" Condition="'$(UseGame)' == 'true' and '$(SkipDeploy)' != 'true'">
+    <PropertyGroup>
+      <!-- Ищем скомпилированный патчер в папке bin проекта Patcher -->
+      <PatcherExe>$(MSBuildProjectDirectory)\..\Patcher\bin\$(Configuration)\net472\SaltPatcher.exe</PatcherExe>
+    </PropertyGroup>
+    
+    <!-- Запускаем патчер. ContinueOnError=true, чтобы не ломать сборку, если патчер не найден -->
+    <Exec Command="&quot;$(PatcherExe)&quot; &quot;$(GameDir)&quot;" ContinueOnError="true" IgnoreExitCode="true" />
+    <Message Importance="high" Text="[SaltMap] Патчер отработал. Если salt.exe не был пропатчен, запусти его вручную." />
+  </Target>
+
+  <!-- Создание релизного ZIP-архива (только в конфигурации Release, совместимого с оригинальным install.ps1) -->
+  <Target Name="GenerateReleaseZip" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <StageDir>$(MSBuildProjectDirectory)\..\dist\stage\</StageDir>
+      <ZipPath>$(MSBuildProjectDirectory)\..\dist\SaltMap-v$(ZipFileVersion).zip</ZipPath>
+    </PropertyGroup>
+
+    <!-- Очистка временной папки -->
+    <RemoveDir Directories="$(StageDir)" />
+    
+    <!-- Создаем структуру: Mods (с lang), Patcher, и корень со скриптами -->
+    <MakeDir Directories="$(StageDir)Mods\lang" />
+    <MakeDir Directories="$(StageDir)Patcher" />
+
+    <!-- 1. Копируем мод и локализацию -->
+    <ItemGroup>
+      <ModFiles Include="$(TargetDir)$(AssemblyName).dll" />
+      <ModFiles Include="$(TargetDir)0Harmony.dll" />
+      <LangFiles Include="$(TargetDir)lang\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(StageDir)Mods" />
+    <Copy SourceFiles="@(LangFiles)" DestinationFolder="$(StageDir)Mods\lang" />
+
+    <!-- 2. Копируем патчер -->
+    <ItemGroup>
+      <PatcherFiles Include="$(MSBuildProjectDirectory)\..\Patcher\bin\$(Configuration)\net472\SaltPatcher.exe" />
+      <PatcherFiles Include="$(MSBuildProjectDirectory)\..\Patcher\bin\$(Configuration)\net472\Mono.Cecil*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PatcherFiles)" DestinationFolder="$(StageDir)Patcher" />
+
+    <!-- 3. Копируем оригинальные скрипты установки -->
+    <ItemGroup>
+      <InstallScripts Include="$(MSBuildProjectDirectory)\..\packaging\*" />
+      <InstallScripts Include="$(MSBuildProjectDirectory)\..\scripts\Find-GameDir.ps1" />
+      <InstallScripts Include="$(MSBuildProjectDirectory)\..\LICENSE" />
+    </ItemGroup>
+    <Copy SourceFiles="@(InstallScripts)" DestinationFolder="$(StageDir)" />
+
+    <!-- 4. Пакуем -->
+    <ZipDirectory SourceDirectory="$(StageDir)" DestinationFile="$(ZipPath)" Overwrite="true" />
+    <RemoveDir Directories="$(StageDir)" />
+    
+    <Message Importance="high" Text="[SaltMap] Релизный архив создан в $(ZipPath)" />
+  </Target>
+
+</Project>

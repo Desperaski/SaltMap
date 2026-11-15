@@ -39,20 +39,30 @@ namespace SaltMap
 
         // What the map page shows, stepped with the D-pad (left/right) or F; saved as mapFilter.
         static readonly Show[] Filters = { Show.All, Show.Items, Show.Bosses, Show.Npcs, Show.Sanctuaries, Show.Enemies, Show.None };
-        static readonly string[] FilterNames = { "All", "Items", "Bosses", "NPCs", "Sanctuaries", "Enemies", "Map only" };
+        static readonly string[] FilterKeys = {
+            Loc.Get("MENU_ALL"), Loc.Get("MENU_ITEMS"), Loc.Get("MENU_BOSSES"),
+            Loc.Get("MENU_NPCS"), Loc.Get("MENU_SANCTUARIES"), Loc.Get("MENU_ENEMIES"), Loc.Get("MENU_MAP_ONLY")
+        };
+
         static int filter = -1;
 
         static readonly StringBuilder Title = new StringBuilder("Map");
-        static readonly StringBuilder KeyboardHint = new StringBuilder(
-            "Move: arrows/WASD/drag    Zoom: Q E/wheel    Show: F    Guide: G    Centre: Space    Back: Esc");
+        static readonly StringBuilder KeyboardHint1 = new StringBuilder(Loc.Get("HINT_KB1"));
+        static readonly StringBuilder KeyboardHint2 = new StringBuilder(Loc.Get("HINT_KB2"));
+
         // The game's own glyph characters (Text.CHAR_*); drawn with replaceIcons 1, so
         // A and B show whichever buttons accept and cancel are set to.
-        static readonly StringBuilder PadHint = new StringBuilder()
-            .Append(Text.CHAR_L_ANALOG_UP).Append(" Move    ")
-            .Append(Text.CHAR_R_ANALOG_UP).Append(" Zoom    ")
-            .Append(Text.CHAR_DPAD_LEFT_RIGHT).Append(" Show    ")
-            .Append(Text.CHAR_Y).Append(" Guide    ")
-            .Append(Text.CHAR_A).Append(" Centre    ").Append(Text.CHAR_B).Append(" Back    ").Append(Text.CHAR_BACK).Append(" Close");
+        static readonly StringBuilder PadHint1 = new StringBuilder()
+            .Append(Text.CHAR_L_ANALOG_UP).Append(" ").Append(Loc.Get("HINT_PAD_MOVE")).Append("    ")
+            .Append(Text.CHAR_R_ANALOG_UP).Append(" ").Append(Loc.Get("HINT_PAD_ZOOM")).Append("    ")
+            .Append(Text.CHAR_DPAD_LEFT_RIGHT).Append(" ").Append(Loc.Get("HINT_PAD_SHOW"));
+
+        static readonly StringBuilder PadHint2 = new StringBuilder()
+            .Append("[y] ").Append(Loc.Get("HINT_PAD_GUIDE")).Append("    ")
+            .Append("[a] ").Append(Loc.Get("HINT_PAD_A")).Append("    ")
+            .Append("[b] ").Append(Loc.Get("HINT_PAD_B")).Append("    ")
+            .Append("[k] ").Append(Loc.Get("HINT_PAD_BACK"));
+
         static readonly StringBuilder Label = new StringBuilder();
 
         static Texture2D icon;
@@ -172,8 +182,12 @@ namespace SaltMap
             GameApi.PlayAccept();
             try { Progress.WriteSnapshot(); }
             catch (Exception e) { Log.ErrorOnce("Progress snapshot", e); }
+
+            try { FogOfWar.Save(Entry.ModDir); }
+            catch (Exception e) { Log.ErrorOnce("Fog save", e); }
+
             Log.Info("menu map opened at map pixel (" + focus.X.ToString("F0", CultureInfo.InvariantCulture) + ", "
-                + focus.Y.ToString("F0", CultureInfo.InvariantCulture) + "), zoom " + zoom + ", showing " + FilterNames[filter]);
+                + focus.Y.ToString("F0", CultureInfo.InvariantCulture) + "), zoom " + zoom + ", showing " + FilterKeys[filter]);
         }
 
         /// <summary>The current filter, read from SaltMap.ini the first time.</summary>
@@ -186,12 +200,12 @@ namespace SaltMap
         static void SetFilter(int f, bool save)
         {
             filter = ((f % Filters.Length) + Filters.Length) % Filters.Length;
-            Title.Clear().Append("Map");
-            if (filter != 0) Title.Append(": ").Append(FilterNames[filter]);
+            Title.Clear().Append(Loc.Get("MENU_MAP"));
+            if (filter != 0) Title.Append(": ").Append(FilterKeys[filter]);
             if (save)
             {
                 Settings.Set("mapFilter", filter.ToString(CultureInfo.InvariantCulture));
-                Log.Info("menu map showing " + FilterNames[filter]);
+                Log.Info("menu map showing " + FilterKeys[filter]);
             }
         }
 
@@ -448,8 +462,10 @@ namespace SaltMap
             Text.DrawText(Title, HeaderCentre(dRect, scale), new Color(1f, 1f, 1f, alpha), 0.55f * scale, 1);
 
             // The map itself, with the mod's own batch so it can be clipped.
-            Rectangle area = new Rectangle((int)(dRect.X + 18f * scale), (int)(dRect.Y + 132f * scale),
-                (int)(dRect.Width - 36f * scale), (int)(dRect.Height - 142f * scale));
+            // Расширяем карту: меньше отступов сверху и снизу
+            Rectangle area = new Rectangle((int)(dRect.X + 10f * scale), (int)(dRect.Y + 90f * scale),
+                (int)(dRect.Width - 20f * scale), (int)(dRect.Height - 100f * scale));
+
             float mapPerScreen = ZoomAt(zoom) * scale / MapSpace.PixelsPerUnit;
             mapRect = area;
             mapScale = mapPerScreen;
@@ -464,6 +480,7 @@ namespace SaltMap
                 EdgePointer = true,
                 OnlyRinged = zoom < FarZoomLevels,      // the farthest levels: only the ringed objectives
                 EnemyRange = EnemyRange,
+                Opacity = 1f,
             };
             Overlay.DrawOutsideGameBatch(device => MapView.Draw(device, Overlay.Batch, Overlay.Pixel, area, focus, mapPerScreen, style));
 
@@ -484,9 +501,18 @@ namespace SaltMap
             // The map's controls go in the prompt bar under the menu, in place of the game's
             // prompts (hidden while the map is open), at the game's prompt size and place.
             // This overload squeezes text into maxLen and scales size by 0.8.
+
             bool keyboard = GameApi.UsingKeyboard(p);
-            Text.DrawText(keyboard ? KeyboardHint : PadHint, new Vector2(dRect.X + 20f * scale, dRect.Bottom + 30f * scale),
-                new Color(1f, 1f, 1f, alpha), 0.45f * scale, 0, dRect.Width - 40f * scale, p, keyboard ? 0 : 1);
+            Vector2 hintPos1 = new Vector2(dRect.X + 20f * scale, dRect.Bottom + 12f * scale);
+            Vector2 hintPos2 = new Vector2(dRect.X + 20f * scale, dRect.Bottom + 38f * scale);
+
+            // СТРОКА 1: Стики и крестовина. Передаем replaceIcons = 2, чтобы сработал GetSpecialRect.
+            Text.DrawText(keyboard ? KeyboardHint1 : PadHint1, hintPos1,
+                new Color(1f, 1f, 1f, alpha), 0.4f * scale, 0, dRect.Width - 40f * scale, p, keyboard ? 0 : 2);
+
+            // СТРОКА 2: Кнопки. Передаем replaceIcons = 1, чтобы игра заменила теги [a], [b], [y] на иконки.
+            Text.DrawText(keyboard ? KeyboardHint2 : PadHint2, hintPos2,
+                new Color(1f, 1f, 1f, alpha), 0.4f * scale, 0, dRect.Width - 40f * scale, p, keyboard ? 0 : 1);
 
             Vector2 pointer = centre;
             if (MouseMgr.isActive && area.Contains(new Point((int)MouseMgr.mLoc.X, (int)MouseMgr.mLoc.Y))) pointer = MouseMgr.mLoc;
@@ -508,12 +534,14 @@ namespace SaltMap
             else if (MapView.NearestEnemy(area, focus, mapPerScreen, pointer, 16f * scale, style, out foe))
             {
                 // An enemy: its name in the game's language, and its health while it is spawned.
-                string name = Enemies.NameOf(foe.MonsterIdx) ?? "Enemy";
+                string name = Enemies.NameOf(foe.MonsterIdx) ?? Loc.Get("MAP_ENEMY");
                 Label.Clear().Append(name);
+
                 if (foe.Live && foe.MaxHp > 0f)
                     Label.Append("  ").Append(((int)Math.Ceiling(foe.Hp)).ToString(CultureInfo.InvariantCulture))
                          .Append(" / ").Append(((int)Math.Ceiling(foe.MaxHp)).ToString(CultureInfo.InvariantCulture));
-                if (foe.Live && foe.Aggro) Label.Append("  (alert)");
+
+                if (foe.Live && foe.Aggro) Label.Append("  ").Append(Loc.Get("MAP_ALERT"));
                 DrawLabel(area, MapView.ToScreen(area, focus, mapPerScreen, foe.Map), scale, alpha);
             }
 
@@ -543,7 +571,11 @@ namespace SaltMap
             {
                 Vector2 at = MapView.ToScreen(area, focus, mapPerScreen, r.Map);
                 if (!area.Contains(new Point((int)at.X, (int)at.Y)) || r.Name.Length == 0) continue;
-                AreaName.Clear().Append(r.Name);
+
+                // Если зона не исследована, не рисуем текст
+                if (!FogOfWar.IsAreaVisited(r.Map, FogOfWar.TextRevealRadius)) continue;
+
+                AreaName.Clear().Append(Loc.Get("REGION_" + r.Name));
                 float size = 0.42f * scale;
                 Text.DrawText(AreaName, at + new Vector2(1.5f, 1.5f) * scale, new Color(0f, 0f, 0f, 0.8f * alpha), size, 1);
                 Text.DrawText(AreaName, at, new Color(1f, 0.93f, 0.75f, 0.95f * alpha), size, 1);
@@ -565,16 +597,17 @@ namespace SaltMap
             Progress.Count(Show.Items, out items, out itemsTotal);
             Progress.Count(Show.Bosses, out bosses, out bossesTotal);
             Places.CountSanctuaries(out claimed, out sanctuaries);
-            Stats.Clear().Append("Items ").Append(items).Append('/').Append(itemsTotal)
-                 .Append("     Bosses ").Append(bosses).Append('/').Append(bossesTotal)
-                 .Append("     Sanctuaries claimed ").Append(claimed).Append('/').Append(sanctuaries);
+            Stats.Clear().Append(Loc.Get("STAT_ITEMS")).Append(" ").Append(items).Append('/').Append(itemsTotal)
+                 .Append("     ").Append(Loc.Get("STAT_BOSSES")).Append(" ").Append(bosses).Append('/').Append(bossesTotal)
+                 .Append("     ").Append(Loc.Get("STAT_SANCTUARIES")).Append(" ").Append(claimed).Append('/').Append(sanctuaries);
 
             string next;
             Vector2 where;
             NextLine.Clear();
-            if (Guide.Next(out next, out where)) NextLine.Append("Next: ").Append(next);
-            else if (!Guide.Enabled) NextLine.Append("Guide off");
-            else NextLine.Append("Main route done");
+
+            if (Guide.Next(out next, out where)) NextLine.Append(Loc.Get("GUIDE_NEXT")).Append(next);
+            else if (!Guide.Enabled) NextLine.Append(Loc.Get("GUIDE_OFF"));
+            else NextLine.Append(Loc.Get("GUIDE_DONE"));
 
             // One optional objective per line, two at most, so none is squeezed.
             OptionalLines[0].Clear();
@@ -582,7 +615,7 @@ namespace SaltMap
             int open = 0;
             foreach (KeyValuePair<string, Vector2> o in Guide.OptionalOpen())
             {
-                if (open < OptionalLines.Length) OptionalLines[open].Append("Optional: ").Append(o.Key);
+                if (open < OptionalLines.Length) OptionalLines[open].Append(Loc.Get("GUIDE_OPTIONAL")).Append(o.Key);
                 open++;
             }
             if (open > OptionalLines.Length) OptionalLines[OptionalLines.Length - 1].Append("   (+").Append(open - OptionalLines.Length).Append(" more)");

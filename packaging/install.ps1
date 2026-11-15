@@ -25,9 +25,21 @@ if ($LASTEXITCODE) { throw "The patcher failed (exit code $LASTEXITCODE); see th
 
 $mods = [IO.Path]::Combine($game, 'Mods')
 [void][IO.Directory]::CreateDirectory($mods)
+
 Get-ChildItem -LiteralPath ([IO.Path]::Combine($here, 'Mods')) -File | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination ([IO.Path]::Combine($mods, $_.Name)) -Force
 }
+
+# Копируем папку с локализацией
+$langSrc = [IO.Path]::Combine($here, 'Mods', 'lang')
+if ([IO.Directory]::Exists($langSrc)) {
+    $langDest = [IO.Path]::Combine($mods, 'lang')
+    [void][IO.Directory]::CreateDirectory($langDest)
+    Get-ChildItem -LiteralPath $langSrc -File | ForEach-Object {
+        Copy-Item -LiteralPath $_.FullName -Destination ([IO.Path]::Combine($langDest, $_.Name)) -Force
+    }
+}
+
 Get-ChildItem -LiteralPath $mods -File -Filter *.dll | Unblock-File
 Write-Host "Mod installed to $mods"
 

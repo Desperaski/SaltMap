@@ -13,17 +13,34 @@ function Get-SsMap([string]$Destination) {
 
     Write-Host "Downloading the SSMap map data (about 120 MB) from github.com/$SsMapRepo ..."
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    
     try {
         if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
-            & curl.exe -L --fail --progress-bar -o $download $url
-            if ($LASTEXITCODE) { throw "curl exit code $LASTEXITCODE" }
+            # curl запускается в скрытом окне и молчит. Он никак не влияет на консоль.
+            $argList = @("-L", "--fail", "-s", "-o", "`"$download`"", "`"$url`"")
+            $process = Start-Process -FilePath "curl.exe" -ArgumentList $argList -PassThru -WindowStyle Hidden
+            
+            while (-not $process.HasExited) {
+                if (Test-Path $download) {
+                    $sizeMB = [math]::Round((Get-Item $download -ErrorAction SilentlyContinue).Length / 1MB, 1)
+                    # Примерный общий размер ~120 MB
+                    $percent = [math]::Min(99, [int]($sizeMB / 120 * 100))
+                    Write-Progress -Activity "Downloading SSMap data" -Status "$sizeMB MB / ~120 MB" -PercentComplete $percent
+                }
+                Start-Sleep -Milliseconds 300
+            }
+            Write-Progress -Activity "Downloading SSMap data" -Completed
+            
+            if ($process.ExitCode) { throw "curl exit code $($process.ExitCode)" }
         } else {
+            Write-Host "  curl.exe not found, using WebClient (no progress bar)..."
             (New-Object Net.WebClient).DownloadFile($url, $download)
         }
     } catch {
         throw "Download of $url failed: $($_.Exception.Message)"
     }
 
+    # --- РАСПАКОВКА ---
     # Only what SaltMap reads, plus SSMap's own README for its credits. The many small tile
     # files are what make this slow, especially while antivirus software scans each one.
     $partial = "$Destination.partial"
@@ -37,10 +54,13 @@ function Get-SsMap([string]$Destination) {
             $seen = 0
             foreach ($entry in $zip.Entries) {
                 $seen++
-                if ($seen % 500 -eq 0) {
-                    Write-Progress -Activity 'Extracting the SSMap map data' -Status "$count files" -PercentComplete (100 * $seen / $total)
+                # Обновляем раз в 100 файлов, чтобы полоска не мерцала слишком часто
+                if ($seen % 100 -eq 0 -or $seen -eq $total) {
+                    $percent = [math]::Round(100 * $seen / $total, 1)
+                    Write-Progress -Activity "Extracting SSMap map data" -Status "$count files extracted" -PercentComplete $percent
                 }
-                $slash = $entry.FullName.IndexOf('/')      # entries start with "SSMap-<commit>/"
+                
+                $slash = $entry.FullName.IndexOf('/')
                 if ($slash -lt 0 -or $entry.FullName.EndsWith('/')) { continue }
                 $rel = $entry.FullName.Substring($slash + 1)
                 if (-not ($rel.StartsWith('tiles/') -or $rel.StartsWith('images/markerIcons/') -or $rel -eq 'markers.js' -or $rel -eq 'README.md')) { continue }
@@ -51,7 +71,7 @@ function Get-SsMap([string]$Destination) {
             }
         } finally {
             $zip.Dispose()
-            Write-Progress -Activity 'Extracting the SSMap map data' -Completed
+            Write-Progress -Activity "Extracting SSMap map data" -Completed
         }
         if (-not [IO.Directory]::Exists([IO.Path]::Combine($partial, 'tiles', '0'))) { throw "The download did not contain SSMap's tiles." }
 
